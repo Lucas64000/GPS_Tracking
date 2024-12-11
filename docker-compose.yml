@@ -1,4 +1,4 @@
-version: '3.8'
+version: '4'
 
 networks:
   local-kafka:
@@ -26,6 +26,11 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    healthcheck:
+      test: nc -z localhost 2181 || exit -1
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 
   broker:
@@ -37,7 +42,8 @@ services:
       - "9092:9092"
       - "9093:9093"
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
@@ -48,6 +54,8 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT_INTERNAL://broker:29092,PLAINTEXT_L://localhost:9092,PLAINTEXT_C://broker:9093
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT_INTERNAL:PLAINTEXT,PLAINTEXT_L:PLAINTEXT,PLAINTEXT_C:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+
 
     volumes:
       - ./logs/broker:/var/log/broker
@@ -56,7 +64,11 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 30s
+      retries: 3
+      timeout: 10s
 
 
   kafka-ui:
@@ -71,7 +83,7 @@ services:
     restart: always
     environment:
       - KAFKA_CLUSTERS_0_NAME=broker
-      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=broker:9093
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=broker:9092, broker:9093
       - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
 
     volumes:
@@ -88,13 +100,14 @@ services:
     container_name: whereismydad-producer1
 
     depends_on:
-      - broker
+      broker:
+        condition: service_healthy
     networks:
       - local-kafka
     working_dir: /app
     command: python producer.py
     environment:
-      KAFKA_SERVER: broker:9092
+      KAFKA_SERVER: broker:29092
       PRODUCER_ID: producer1
       KAFKA_TOPIC: topic_test
     volumes:
@@ -112,14 +125,15 @@ services:
       context: ./docker/producer
     container_name: whereismydad-producer2
     depends_on:
-      - broker
+      broker:
+        condition: service_healthy
     networks:
       - local-kafka
     working_dir: /app
     command: python producer.py
     environment:
       PRODUCER_ID: producer2
-      KAFKA_SERVER: broker:9092
+      KAFKA_SERVER: broker:29092
       KAFKA_TOPIC: topic_test
     volumes:
       - ./docker/producer/app:/app
@@ -137,7 +151,8 @@ services:
       context: ./docker/consumer
     container_name: whereismydad-consumer
     depends_on:
-      - broker
+      broker:
+        condition: service_healthy
     networks:
       - local-kafka
     volumes:
