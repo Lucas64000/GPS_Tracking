@@ -77,10 +77,6 @@ install_docker_compose() {
 }
 
 
-# Modifier les permissions du socket Docker
-echo "[INFO] Configuration des permissions pour le socket Docker..."
-sudo chmod 666 /var/run/docker.sock
-
 
 # Ajoute l'utilisateur courant au groupe Docker
 add_user_to_docker_group() {
@@ -106,8 +102,14 @@ add_user_to_docker_group
 # Vérification et installation de Docker Compose
 install_docker_compose
 
+# Modifier les permissions du socket Docker
+echo "[INFO] Configuration des permissions pour le socket Docker..."
+sudo chmod 666 /var/run/docker.sock
+
+
 # Test Docker
 echo -e "${GREEN}Test de Docker...${NC}"
 sudo docker run hello-world
+
 
 echo -e "${GREEN}Installation terminée !${NC}"
