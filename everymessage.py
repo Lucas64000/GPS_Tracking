@@ -18,10 +18,17 @@ consumer = KafkaConsumer(
 producer = KafkaProducer(bootstrap_servers=['localhost:9092'])
 
 # Envoi d'un message (encodage explicite en bytes)
-#producer.send('quickstart-events', 'Test message'.encode('utf-8'))
-#producer.flush()
+# producer.send('lucas', 'Test message'.encode('utf-8'))
+# producer.flush()
 
 # Lecture et affichage des messages (décodage en string)
 print("En attente des messages...")
 for message in consumer:
-    print(f"Received message: {message.value.decode('utf-8')}")
+    # Vérifie si le message a une valeur non nulle
+    if message.value is not None:
+        try:
+            print(f"Received message: {message.value.decode('utf-8')}")
+        except UnicodeDecodeError as e:
+            print(f"Erreur de décodage pour le message : {e}")
+    else:
+        print("Received an empty message. Skipping...")
