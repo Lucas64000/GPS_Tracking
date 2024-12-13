@@ -20,8 +20,8 @@ for message in consumer:
     if message.value is not None:
         try:
             json_data = json.loads(message.value.decode('utf-8'))
-            lat, long = json_data.values()
-            print(lat, long)
+            id, lat, long = json_data.values()
+            print(id, lat, long)
         except UnicodeDecodeError as e:
             print(f"Erreur de décodage pour le message : {e}")
     else:
