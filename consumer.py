@@ -8,7 +8,7 @@ if sys.version_info >= (3, 12, 0):
 from kafka import KafkaConsumer
 
 consumer = KafkaConsumer(
-    'lucas',
+    'gps',
     bootstrap_servers='localhost:9092',
     auto_offset_reset='earliest',
     enable_auto_commit=True
