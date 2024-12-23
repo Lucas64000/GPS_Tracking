@@ -18,7 +18,7 @@ lat, long = 43.3, -0.37
 while(True):
     randomLatitude = random.uniform(-0.001, 0.001)
     randomLongitude = random.uniform(-0.001, 0.001)
-    id = 2
+    id = 1
     lat += randomLatitude
     long += randomLongitude
 
