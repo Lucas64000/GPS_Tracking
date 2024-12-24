@@ -41,7 +41,14 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT_INTERNAL://broker:29092,PLAINTEXT_L://${IP_BROKER}:9092,PLAINTEXT_C://broker:9093
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT_INTERNAL:PLAINTEXT,PLAINTEXT_L:PLAINTEXT,PLAINTEXT_C:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
-
+    volumes:
+      - ./consumer.py:/consumer.py
+      - ./requirements.txt:/requirements.txt
+    command: >
+      sh -c "
+      pip install -r /requirements.txt &&
+      python /consumer.py
+      "
   kafka-ui:
     image: provectuslabs/kafka-ui
     container_name: kafka-ui
