@@ -3,6 +3,9 @@ import random
 import json
 from time import sleep
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 if sys.version_info >= (3, 12, 0):
     import six
@@ -11,8 +14,8 @@ if sys.version_info >= (3, 12, 0):
 from kafka import KafkaConsumer, KafkaProducer
 
 # Création d'un producteur Kafka
-ipbroker = os.getenv('IP_BROKER')
-producer = KafkaProducer(bootstrap_servers=[f'{ipbroker}:9092'])
+ip_broker = os.getenv('IP_BROKER')
+producer = KafkaProducer(bootstrap_servers=[f'{ip_broker}:9092'])
 lat, long = 43.3, -0.37
 
 while(True):
