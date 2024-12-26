@@ -8,11 +8,7 @@ WORKDIR /app
 COPY . /app
 
 # Installer les dépendances nécessaires
-RUN pip install kafka-python
-RUN pip install six
-
-# Exposer le port utilisé par Kafka (optionnel pour debugging)
-EXPOSE 9092
+RUN pip install -r requirements.txt
 
 # Commande pour exécuter le script
 CMD ["python", "-u", "producer.py"]
