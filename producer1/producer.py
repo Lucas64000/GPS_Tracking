@@ -11,8 +11,8 @@ if sys.version_info >= (3, 12, 0):
 from kafka import KafkaConsumer, KafkaProducer
 
 # Création d'un producteur Kafka
-ip_producer1 = os.getenv('IP_PRODUCER1')
-producer = KafkaProducer(bootstrap_servers=[f'{ip_producer1}:9092'])
+ipbroker = os.getenv('IP_BROKER')
+producer = KafkaProducer(bootstrap_servers=[f'{ipbroker}:9092'])
 lat, long = 43.3, -0.37
 
 while(True):
