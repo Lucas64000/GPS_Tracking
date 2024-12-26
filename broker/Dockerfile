@@ -5,7 +5,7 @@ FROM python:3.8.10
 WORKDIR /app
 
 # Copier le script Python dans le conteneur
-COPY consumer.py /app/consumer.py
+COPY . /app
 
 # Installer les dépendances nécessaires
 RUN pip install kafka-python
