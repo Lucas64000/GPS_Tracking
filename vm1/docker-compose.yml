@@ -78,3 +78,38 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - BROKER_URL=broker:9093  
+
+  fastapi:
+    build:
+      context: ./fastapi
+      dockerfile: Dockerfile
+    container_name: fastapi_app
+    networks:
+      - local-kafka
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/mydatabase
+
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    networks:
+      - local-kafka
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydatabase
+    ports:
+      - "5432:5432"
+
+  vue-app:
+    build:
+      context: ./vue-app
+      dockerfile: Dockerfile
+    container_name: vue_app
+    networks:
+      - local-kafka
+    ports:
+      - "8080:8080"
