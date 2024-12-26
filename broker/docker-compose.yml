@@ -25,8 +25,6 @@ services:
     networks:
       - local-kafka
     ports:
-    # To learn about configuring Kafka for access across networks see
-    # https://www.confluent.io/blog/kafka-client-cannot-connect-to-broker-on-aws-on-docker-etc/
       - "9092:9092"
       - "9093:9093"
     depends_on:
@@ -41,6 +39,11 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT_INTERNAL://broker:29092,PLAINTEXT_L://${IP_BROKER}:9092,PLAINTEXT_C://broker:9093
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT_INTERNAL:PLAINTEXT,PLAINTEXT_L:PLAINTEXT,PLAINTEXT_C:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9093"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   kafka-ui:
     image: provectuslabs/kafka-ui
@@ -56,3 +59,22 @@ services:
       - KAFKA_CLUSTERS_0_NAME=broker
       - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=${IP_BROKER}:9092
       - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+
+  consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: python_consumer
+    networks:
+      - local-kafka
+    depends_on:
+      broker:
+        condition: service_healthy
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: >
+      bash -c "pip install kafka-python && python -u consumer.py"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - BROKER_URL=broker:9093  
