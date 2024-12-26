@@ -5,7 +5,7 @@ FROM python:3.8.10
 WORKDIR /app
 
 # Copier les fichiers requirements.txt et main.py dans le conteneur
-COPY requirements.fastapi.txt requirements.txt
+COPY requirements.txt requirements.txt
 COPY main.py main.py
 
 # Installer les dépendances
