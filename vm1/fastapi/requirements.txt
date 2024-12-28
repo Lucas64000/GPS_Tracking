@@ -3,3 +3,4 @@ uvicorn
 kafka-python
 sqlalchemy
 asyncpg
+pydantic

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compteur WebSocket</title>
+    <script>
+        // Créer une nouvelle connexion WebSocket
+        const socket = new WebSocket("ws://localhost:8000/ws");
+
+        // Lorsque la connexion est ouverte, on affiche un message
+        socket.onopen = function() {
+            console.log("Connexion WebSocket établie");
+        };
+
+        // Lorsque le serveur envoie des données, mettre à jour le compteur
+        socket.onmessage = function(event) {
+            const compteurElement = document.getElementById("compteur");
+            compteurElement.innerText = event.data;
+        };
+
+        // En cas de fermeture de la connexion
+        socket.onclose = function() {
+            console.log("Connexion WebSocket fermée");
+        };
+    </script>
+</head>
+<body>
+    <h1>Compteur en temps réel</h1>
+    <p>Compteur : <span id="compteur">0</span></p>
+</body>
+</html>

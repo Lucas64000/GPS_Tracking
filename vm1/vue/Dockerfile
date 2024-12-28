@@ -4,7 +4,7 @@ FROM node:14
 # Définir le répertoire de travail dans le conteneur
 WORKDIR /app
 
-COPY package.json ./
+COPY package.json package.json ./ 
 
 # Installer les dépendances
 RUN npm install
@@ -20,3 +20,4 @@ EXPOSE 8080
 
 # Exécuter l'application Vue.js
 CMD ["npm", "run", "serve"]
+
