@@ -1,9 +1,18 @@
 import asyncio
 from fastapi import FastAPI
 from kafka import KafkaConsumer
+from fastapi.middleware.cors import CORSMiddleware
 import threading
 app = FastAPI()
 
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Vous pouvez restreindre cela à des origines spécifiques si nécessaire
+    allow_credentials=True,
+    allow_methods=["*"],  # Ou spécifiez les méthodes autorisées (GET, POST, etc.)
+    allow_headers=["*"],  # Ou spécifiez les en-têtes autorisés
+)
 # Nom du topic Kafka auquel le consumer va s'abonner
 TOPIC_NAME = "gps"
 
@@ -36,7 +45,7 @@ def consume_messages():
 def read_root():
     return {"message": "FastAPI with Kafka is running!"}
 
-# Endpoint pour récupérer les messages consommés
+# Endpoint pour récupérer les messages consommés²
 @app.get("/messages")
 def get_messages():
     return {"messages": received_messages}

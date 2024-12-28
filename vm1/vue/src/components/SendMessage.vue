@@ -2,7 +2,7 @@
   <div>
     <h1>Send Message to FastAPI</h1>
     <input v-model="message" placeholder="Enter your message" />
-    <button @click="fetchKafkaMessages">Send</button>
+    <button @click="fetchKafkaMessages">Receive</button>
     <p>{{ response }}</p>
 
     <h2>Messages from Kafka:</h2>
@@ -24,18 +24,13 @@ export default {
     }
   },
   methods: {
-    async sendMessage() {
-      try {
-        const res = await axios.post('http://0.0.0.0:8000/send', { message: this.message });
-        this.response = res.data.status
-      } catch (error) {
-        this.response = 'Error sending message'
-      }
-    },
+    
     async fetchKafkaMessages() {
       try {
         const res = await axios.get('http://0.0.0.0:8000/messages');  // Requête GET pour obtenir les messages Kafka
-        this.kafkaMessages = res.data.messages  // Met à jour le tableau kafkaMessages avec les messages reçus
+        console.log(JSON.stringify(res.data.messages, null, 2));
+        
+        this.kafkaMessages = JSON.stringify(res.data.messages, null, 2)  // Met à jour le tableau kafkaMessages avec les messages reçus
       } catch (error) {
         console.error('Error fetching Kafka messages:', error)
       }
