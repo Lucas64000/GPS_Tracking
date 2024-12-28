@@ -2,6 +2,7 @@ import asyncio
 from fastapi import FastAPI
 from kafka import KafkaConsumer
 import threading
+app = FastAPI()
 
 # Nom du topic Kafka auquel le consumer va s'abonner
 TOPIC_NAME = "gps"
@@ -9,7 +10,6 @@ TOPIC_NAME = "gps"
 # Adresse du broker Kafka
 BROKER_URL = "broker:9093"  # C'est l'adresse que le consumer voit dans le réseau Docker
 
-app = FastAPI()
 
 # Liste pour stocker les messages reçus
 received_messages = []
@@ -31,12 +31,19 @@ def consume_messages():
         received_messages.append(message.value.decode('utf-8'))
 
 # Démarrage de la fonction de consommation dans un thread en arrière-plan
-@app.on_event("startup")
-async def startup_event():
-    loop = asyncio.get_event_loop()
-    # Lancer la consommation dans un thread séparé pour ne pas bloquer le serveur FastAPI
-    await loop.run_in_executor(None, consume_messages)
 
 @app.get("/")
 def read_root():
     return {"message": "FastAPI with Kafka is running!"}
+
+# Endpoint pour récupérer les messages consommés
+@app.get("/messages")
+def get_messages():
+    return {"messages": received_messages}
+
+
+# Démarrer la consommation dans un thread séparé pour ne pas bloquer FastAPI
+@app.on_event("startup")
+def startup_event():
+    # Lancer la consommation Kafka dans un thread séparé
+    threading.Thread(target=consume_messages, daemon=True).start()
