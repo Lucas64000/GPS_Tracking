@@ -1,45 +1,70 @@
 <template>
   <div>
-    <h1>Send Message to FastAPI</h1>
-    <input v-model="message" placeholder="Enter your message" />
-    <button @click="fetchKafkaMessages">Receive</button>
-    <p>{{ response }}</p>
-
-    <h2>Messages from Kafka:</h2>
+    <div id="map" style="height: 600px;"></div>
+    <h2>Coordonnées en temps réel</h2>
     <ul>
-      <li v-for="(msg, index) in kafkaMessages" :key="index">{{ msg }}</li>
+      <li 
+        v-for="(coord, index) in coordinates" 
+        :key="index" 
+        :class="'id-' + coord.id" >
+        ID: {{ coord.id }} - Latitude: {{ coord.latitude }} - Longitude: {{ coord.longitude }}
+      </li>
     </ul>
+    
+   
   </div>
 </template>
 
 <script>
-import axios from 'axios'
+
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
 
 export default {
   data() {
     return {
-      message: '',
-      response: '',
-      kafkaMessages: []  // Ajout de cette variable pour stocker les messages de Kafka
-    }
+      messages: [], // Messages from the /messages endpoint
+      coordinates: [], // Real-time coordinates from WebSocket
+    };
   },
   methods: {
-    
-    async fetchKafkaMessages() {
+    async fetchMessages() {
       try {
-        const res = await axios.get('http://0.0.0.0:8000/messages');  // Requête GET pour obtenir les messages Kafka
-        console.log(JSON.stringify(res.data.messages, null, 2));
-        
-        this.kafkaMessages = JSON.stringify(res.data.messages, null, 2)  // Met à jour le tableau kafkaMessages avec les messages reçus
+        const response = await axios.get("http://localhost:8000/messages");
+        this.messages = response.data.messages;
+        console.log("Messages reçus depuis l'API :", this.messages);
       } catch (error) {
-        console.error('Error fetching Kafka messages:', error)
+        console.error("Erreur lors de la récupération des messages :", error);
       }
-    }
+    },
+    connectWebSocket() {
+      this.socket = new WebSocket("ws://localhost:8000/ws");
+
+      this.socket.onopen = () => {
+        console.log("WebSocket connecté !");
+      };
+
+      this.socket.onmessage = (event) => {
+        console.log("Message reçu via WebSocket :", event.data);
+        // Assuming the data is a JSON string, parse it
+        const data = JSON.parse(event.data);
+        this.coordinates.push(data); // Add the coordinates to the list
+      };
+
+      this.socket.onclose = () => {
+        console.log("WebSocket déconnecté.");
+      };
+
+      this.socket.onerror = (error) => {
+        console.error("Erreur WebSocket :", error);
+      };
+    },
   },
   mounted() {
-    this.fetchKafkaMessages();  // Appeler la fonction fetchKafkaMessages lorsqu'on charge le composant
-  }
-}
+    this.connectWebSocket();
+  },
+};
 </script>
 
 <style scoped>
@@ -47,29 +72,35 @@ h1 {
   font-size: 2em;
   margin-bottom: 20px;
 }
-input {
-  padding: 10px;
-  font-size: 1em;
-  margin-right: 10px;
-}
+
 button {
-  padding: 10px;
+  padding: 10px 20px;
   font-size: 1em;
+  margin-bottom: 20px;
 }
-p {
-  margin-top: 20px;
-  font-size: 1.2em;
-}
-h2 {
-  margin-top: 30px;
-  font-size: 1.5em;
-}
+
 ul {
-  margin-top: 10px;
   list-style-type: none;
-  padding-left: 0;
+  padding: 0;
 }
+
 li {
-  padding: 5px 0;
+  background: #f9f9f9;
+  margin: 5px 0;
+  padding: 10px;
+  border-radius: 5px;
 }
+
+.id-1 {
+  background-color: lightblue;
+}
+
+.id-2 {
+  background-color: lightgreen;
+}
+
+.id-3 {
+  background-color: lightcoral;
+}
+
 </style>
