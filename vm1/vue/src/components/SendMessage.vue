@@ -1,16 +1,13 @@
 <template>
   <div>
-    <div id="map" style="height: 600px;"></div>
-    <h2>Coordonnées en temps réel</h2>
-    <ul>
-      <li 
-        v-for="(coord, index) in coordinates" 
-        :key="index" 
-        :class="'id-' + coord.id" >
-        ID: {{ coord.id }} - Latitude: {{ coord.latitude }} - Longitude: {{ coord.longitude }}
-      </li>
-    </ul>
-    
+    <h1>WhereIsMyDads</h1>
+    <div class="map-container"><div id="map" style="height: 500px;"></div></div>
+    <div>
+      <button @click="toggleVisibility(1)">Afficher Papa 1</button>
+      <button @click="toggleVisibility(2)">Afficher Papa 2</button>
+      <button @click="focusOnPolyline(1)">Focus Papa 1</button>
+      <button @click="focusOnPolyline(2)">Focus Papa 2</button>
+    </div>
    
   </div>
 </template>
@@ -34,10 +31,14 @@ export default {
             1: null, // Polyline for individual 1
             2: null, // Polyline for individual 2
           },
-    markersById: {
-      1: null, // Marker for the head of individual 1's polyline
-      2: null, // Marker for the head of individual 2's polyline
-    },
+      markersById: {
+        1: null, // Marker for the head of individual 1's polyline
+        2: null, // Marker for the head of individual 2's polyline
+      },
+      visibilityById: {
+        1: true, // Visibility for individual 1's polyline
+        2: true, // Visibility for individual 2's polyline
+      },
       };
   },
   methods: {
@@ -85,7 +86,7 @@ export default {
       this.markersById[data.id].setLatLng(lastCoord); // Move the existing marker to the new position
     } else {
       const icon = L.icon({
-        iconUrl: data.id === 1 ? 'omar.jpeg' : 'zitt.png', // Replace with appropriate icon paths
+        iconUrl: data.id === 1 ? 'omar.jpeg' : 'raph.png', // Replace with appropriate icon paths
         iconSize: [25, 41], // Adjust size as needed
         iconAnchor: [12, 41], // Anchor point
       });
@@ -93,15 +94,12 @@ export default {
       this.markersById[data.id] = L.marker(lastCoord, { icon: icon }).addTo(this.map);
     }
 
-    // Optionally adjust the map bounds
-    const bounds = L.latLngBounds(
-      Object.values(this.polylinesById).map((polyline) => polyline.getBounds())
-    );
-    this.map.fitBounds(bounds);
+    // Remove fitBounds or any map adjustment logic to prevent refocusing
   } else {
     console.warn(`Received coordinates for unknown ID: ${data.id}`);
   }
 };
+
 
 
 
@@ -115,12 +113,36 @@ export default {
         console.error("Erreur WebSocket :", error);
       };
     },
+    focusOnPolyline(id) {
+    if (this.polylinesById[id]) {
+      this.map.fitBounds(this.polylinesById[id].getBounds());
+    }
+  },
+  toggleVisibility(id) {
+    if (this.polylinesById[id]) {
+      if (this.visibilityById[id]) {
+        // Hide the polyline and marker
+        this.map.removeLayer(this.polylinesById[id]);
+        if (this.markersById[id]) {
+          this.map.removeLayer(this.markersById[id]);
+        }
+      } else {
+        // Show the polyline and marker
+        this.map.addLayer(this.polylinesById[id]);
+        if (this.markersById[id]) {
+          this.map.addLayer(this.markersById[id]);
+        }
+      }
+      // Toggle the visibility state
+      this.visibilityById[id] = !this.visibilityById[id];
+    }
+  },
   },
   mounted() {
   this.connectWebSocket();
 
   // Initialize the map
-  this.map = L.map("map").setView([43.30761833544262, -0.373750699597043], 13);
+  this.map = L.map("map").setView([43.30761833544262, -0.373750699597043], 11);
 
   // Add a tile layer
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -135,28 +157,76 @@ export default {
 </script>
 
 <style scoped>
-h1 {
-  font-size: 2em;
-  margin-bottom: 20px;
-}
-
-button {
-  padding: 10px 20px;
-  font-size: 1em;
-  margin-bottom: 20px;
-}
-
-ul {
-  list-style-type: none;
+/* General Styles */
+body {
+  font-family: 'Press Start 2P', cursive; /* Retro arcade-style font */
+  background: radial-gradient(circle, #141e30, #243b55); /* Dark gradient background */
+  color: #fff; /* Neon white text */
+  margin: 0;
   padding: 0;
 }
 
+/* Header */
+h1 {
+  font-size: 3em;
+  text-align: center;
+  margin-bottom: 20px;
+  text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 30px #00ffff;
+  color: #00ffff; /* Neon cyan */
+}
+
+/* Buttons */
+button {
+  padding: 15px 30px;
+  font-size: 1em;
+  font-family: inherit;
+  border: none;
+  margin: 10px;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(45deg, #ff00cc, #3333ff);
+  border-radius: 5px;
+  box-shadow: 0 0 5px #ff00cc, 0 0 15px #ff00cc, 0 0 20px #3333ff, 0 0 30px #3333ff;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 15px #ff00cc, 0 0 25px #ff00cc, 0 0 35px #3333ff, 0 0 50px #3333ff;
+}
+
+/* Map Container */
+.map-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0;
+}
+
+#map {
+  height: 500px;
+  width: 80%;
+  border: 2px solid #ff00cc;
+  box-shadow: 0 0 10px #3333ff, 0 0 20px #ff00cc, 0 0 30px #ff00cc;
+  border-radius: 10px;
+}
+
+/* Buttons Container */
+div > div {
+  text-align: center;
+  margin-top: 20px;
+}
+
+/* Retro List Items (Optional) */
 li {
-  background: #f9f9f9;
+  background: linear-gradient(45deg, #ff00cc, #3333ff);
+  color: #fff;
   margin: 5px 0;
   padding: 10px;
   border-radius: 5px;
+  text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff;
 }
+
 
 .id-1 {
   background-color: lightblue;
@@ -169,7 +239,5 @@ li {
 .id-3 {
   background-color: lightcoral;
 }
-
-#map { height: 180px; }
 
 </style>
