@@ -1,7 +1,0 @@
-fastapi
-uvicorn[standard]
-kafka-python
-sqlalchemy
-asyncpg
-pydantic
-websockets

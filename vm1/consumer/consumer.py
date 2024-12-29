@@ -3,22 +3,41 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from kafka import KafkaConsumer
 from fastapi.middleware.cors import CORSMiddleware
 import threading
+from sqlalchemy import create_engine, Column, Integer, Float, String, DateTime
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from datetime import datetime
+import json
+
+# Initialisation de FastAPI
 app = FastAPI()
 
-
+# Configuration de CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8080"],  # Vous pouvez restreindre cela à des origines spécifiques si nécessaire
+    allow_origins=["http://localhost:8080"],  
     allow_credentials=True,
-    allow_methods=["*"],  # Ou spécifiez les méthodes autorisées (GET, POST, etc.)
-    allow_headers=["*"],  # Ou spécifiez les en-têtes autorisés
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
-# Nom du topic Kafka auquel le consumer va s'abonner
-TOPIC_NAME = "gps"
 
-# Adresse du broker Kafka
-BROKER_URL = "broker:9093"  # C'est l'adresse que le consumer voit dans le réseau Docker
+# Configuration de SQLAlchemy
+DATABASE_URL = "postgresql://postgres:password@postgres:5432/mydatabase"
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=True, bind=engine)
+Base = declarative_base()
 
+# Modèle pour stocker les messages dans la base de données
+class GPSMessage(Base):
+    __tablename__ = "gps_messages"
+    id = Column(Integer, primary_key=True, index=True)
+    daddy_id = Column(Integer, nullable=False)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+# Création des tables
+Base.metadata.create_all(bind=engine)
 
 # WebSocket Manager
 class ConnectionManager:
@@ -38,52 +57,75 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-# Liste pour stocker les messages reçus
-received_messages = []
-active_connections = []
-
+# Kafka Consumer
 consumer = KafkaConsumer(
-        TOPIC_NAME,
-        bootstrap_servers=[BROKER_URL],
-        auto_offset_reset='earliest',  # Lit les messages depuis le début du topic si aucun offset n'est défini
-        enable_auto_commit=True,       # Permet de committer automatiquement les offsets
-    )
+    'gps',
+    bootstrap_servers=['broker:9093'],
+    auto_offset_reset='earliest',
+    enable_auto_commit=True,
+)
 
-# Fonction pour consommer les messages de Kafka (en arrière-plan)
+# Fonction pour consommer les messages Kafka et les sauvegarder
 def consume_kafka_messages():
-    for message in consumer:
-        print(f"Message reçu : {message.value.decode('utf-8')}")
-        # Diffuser le message à toutes les connexions WebSocket
-        message_decoded = message.value.decode("utf-8")
-        if manager.active_connections:
-            import asyncio
-            asyncio.run(manager.broadcast(message_decoded))
-# Démarrage de la fonction de consommation dans un thread en arrière-plan
+    session = SessionLocal()
+    try:
+        for message in consumer:
+            print(f"Message reçu : {message.value.decode('utf-8')}")
+            message_decoded = json.loads(message.value.decode("utf-8"))
+            
+            # Sauvegarder le message dans la base de données
+            gps_message = GPSMessage(
+                daddy_id=message_decoded.get("id"),
+                latitude=message_decoded.get("latitude"),
+                longitude=message_decoded.get("longitude"),
+                timestamp=datetime.utcnow()
+            )
+            session.add(gps_message)
+            session.commit()
+
+            # Diffuser le message via WebSocket
+            if manager.active_connections:
+                asyncio.run(manager.broadcast(message.value.decode("utf-8")))
+    except Exception as e:
+        print(f"Erreur lors de la consommation Kafka : {e}")
+    finally:
+        session.close()
 
 @app.get("/")
 def read_root():
-    return {"message": "FastAPI with Kafka is running!"}
-
-# Endpoint pour récupérer les messages consommés²
-@app.get("/messages")
-def get_messages():
-    return {"messages": received_messages}
+    return {"message": "FastAPI with Kafka and DB is running!"}
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     try:
         while True:
-            # Here, we don't need to do anything with the incoming messages from the client
-            # The server just listens for Kafka messages and broadcasts them to the client
-            await websocket.receive_text()
+            await websocket.receive_text()  # Le serveur n'a pas besoin de traiter ces messages
     except WebSocketDisconnect:
         print("Client disconnected")
     finally:
         manager.disconnect(websocket)
 
-        
-# Démarrer la consommation dans un thread séparé pour ne pas bloquer FastAPI
+# Endpoint pour récupérer les messages de la base de données
+@app.get("/messages")
+def get_saved_messages():
+    session = SessionLocal()
+    try:
+        messages = session.query(GPSMessage).all()
+        return [
+            {
+                "id": msg.id,
+                "daddy_id": msg.daddy_id,
+                "latitude": msg.latitude,
+                "longitude": msg.longitude,
+                "timestamp": msg.timestamp,
+            }
+            for msg in messages
+        ]
+    finally:
+        session.close()
+
+# Démarrage de la consommation Kafka dans un thread séparé
 @app.on_event("startup")
 def startup_event():
     threading.Thread(target=consume_kafka_messages, daemon=True).start()
