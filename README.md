@@ -1,6 +1,6 @@
 # WhereIsMyDad
 
-L'application **WhereIsMyDad** va permettre à n'importe qui de retrouver ses deux parents, à condition qu'ils émettent leurs coordonnées gps. Suivez simplement les étapes suivantes pour installer l'application sur votre machine:
+L'application **WhereIsMyDad** va permettre à n'importe qui de retrouver ses deux parents, à condition qu'ils émettent leurs coordonnées gps. Suivez simplement ces étapes pour installer l'application sur votre machine:
 
 ## Installation
 
@@ -9,7 +9,7 @@ L'application **WhereIsMyDad** va permettre à n'importe qui de retrouver ses de
    Exécutez la commande suivante dans le répertoire de votre choix sur les 3 VMs:
 
    ```bash
-   git clone https://github.com/Jacqkues/Projet_Devops.git
+   git clone https://github.com/RaphaelDP/WhereIsMyDad.git
    ```
 
 2. **Ajouter les fichiers .env pour chaque VM :**
@@ -54,13 +54,13 @@ L'application **WhereIsMyDad** va permettre à n'importe qui de retrouver ses de
 
 3. **Accéder aux données générées par les papas :**
 
-   Ouvrez un terminal à partir dans la VM1, et exécutez cette commande :
+   Ouvrez un terminal à partir de la VM1, et exécutez cette commande :
 
    ```bash
    docker exec -it postgres psql -U postgres -d daddy_db
    ```
 
-   Vous êtes dans la console postgres, connecté à la base de données. Vous pouvez maintenant exécutez la commande suivante pour afficher les 10 premières données :
+   Vous êtes à présent dans la console postgres, et connecté à la base de données. Vous pouvez maintenant exécutez la commande suivante pour afficher les 10 premières données :
 
    ```bash
    select * from gps_messages limit 10;
