@@ -60,7 +60,7 @@ L'application **WhereIsMyDad** va permettre à n'importe qui de retrouver ses de
    docker exec -it postgres psql -U postgres -d daddy_db
    ```
 
-   Vous êtes à présent dans la console postgres, et connecté à la base de données. Vous pouvez maintenant exécutez la commande suivante pour afficher les 10 premières données :
+   Vous êtes à présent dans la console postgres, et connecté à la base de données. Vous pouvez maintenant exécuter la commande suivante pour afficher les 10 premières données :
 
    ```bash
    select * from gps_messages limit 10;
