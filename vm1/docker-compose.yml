@@ -1,0 +1,109 @@
+# This setup allows you to both connect from within the docker-compose context as well as from services running on your local
+# machine but not as part of the docker-compose setup. Any client connecting to the broker from the outside can connect to
+# localhost:9092 while services running as part of the docker-compose connect to broker:9093.
+#
+# To access kafka-ui: http://localhost:7777
+#
+# I hope this helps someone out there! :)
+networks:
+  local-kafka:
+    driver: bridge
+
+services:
+  zookeeper:  
+    image: confluentinc/cp-zookeeper:7.0.1
+    container_name: zookeeper
+    networks:
+      - local-kafka
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  broker:
+    image: confluentinc/cp-kafka:7.0.1
+    container_name: broker
+    networks:
+      - local-kafka
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_LISTENERS: PLAINTEXT_INTERNAL://0.0.0.0:29092,PLAINTEXT_C://0.0.0.0:9093,PLAINTEXT_L://0.0.0.0:9092,
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT_INTERNAL://broker:29092,PLAINTEXT_L://${IP_BROKER}:9092,PLAINTEXT_C://broker:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT_INTERNAL:PLAINTEXT,PLAINTEXT_L:PLAINTEXT,PLAINTEXT_C:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9093"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui
+    container_name: kafka-ui
+    networks:
+      - local-kafka
+    depends_on: 
+      - broker
+    ports:
+      - "7777:8080"
+    restart: always
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=broker
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=${IP_BROKER}:9092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+
+  consumer:
+    build:
+      context: ./consumer
+      dockerfile: Dockerfile
+    container_name: fastapi_consumer
+    networks:
+      - local-kafka
+    depends_on:
+      broker:
+        condition: service_healthy
+    working_dir: /app
+    volumes:
+      - ./consumer:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - BROKER_URL=broker:9093
+    ports:
+      - "8000:8000"  
+  
+  postgres:
+    image: postgres:17
+    container_name: postgres
+    networks:
+      - local-kafka
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: daddy_db
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d daddy_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  vue:
+    build:
+      context: ./vue
+      dockerfile: Dockerfile
+    container_name: vue
+    networks:
+      - local-kafka
+    ports:
+      - "8080:8080"
