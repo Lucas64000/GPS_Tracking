@@ -7,7 +7,7 @@
         </div>
         <div v-if="currentStep === 2" class="popup-step">
           <img src="jeremi.JPG" alt="Second" class="popup-image" style="height: 100px;"/>
-          <p>Ne t'en fais pas mon petit, tata vas hacker tes papa pour les tracer. On va retrouver tes paternels</p>
+          <p>Ne t'en fais pas mon petit, tata va hacker tes papas pour les tracer. On va retrouver tes paternels</p>
         </div>
         <button v-if="currentStep === 2" class="close-button" @click="closePopup">Commencer la traque</button>
           </div>
@@ -18,17 +18,17 @@
   export default {
     data() {
       return {
-        currentStep: 1, // Track the current step in the popup
+        currentStep: 1, 
       };
     },
     mounted() {
       setTimeout(() => {
-        this.currentStep = 2; // Switch to the second image after 2 seconds
-      }, 8000);
+        this.currentStep = 2; 
+      }, 6000);
     },
     methods: {
       closePopup() {
-        this.$emit('closePopup'); // Emit an event to close the popup
+        this.$emit('closePopup'); 
       },
     },
   };

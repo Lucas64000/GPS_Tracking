@@ -9,10 +9,8 @@ from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 import json
 
-# Initialisation de FastAPI
 app = FastAPI()
 
-# Configuration de CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:8080"],  
@@ -21,13 +19,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configuration de SQLAlchemy
-DATABASE_URL = "postgresql://postgres:password@postgres:5432/mydatabase"
+DATABASE_URL = "postgresql://postgres:password@postgres:5432/daddy_db"
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=True, bind=engine)
 Base = declarative_base()
 
-# Modèle pour stocker les messages dans la base de données
 class GPSMessage(Base):
     __tablename__ = "gps_messages"
     id = Column(Integer, primary_key=True, index=True)
@@ -36,10 +32,8 @@ class GPSMessage(Base):
     longitude = Column(Float, nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow)
 
-# Création des tables
 Base.metadata.create_all(bind=engine)
 
-# WebSocket Manager
 class ConnectionManager:
     def __init__(self):
         self.active_connections: list[WebSocket] = []
@@ -57,7 +51,6 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-# Kafka Consumer
 consumer = KafkaConsumer(
     'gps',
     bootstrap_servers=['broker:9093'],
@@ -65,7 +58,6 @@ consumer = KafkaConsumer(
     enable_auto_commit=True,
 )
 
-# Fonction pour consommer les messages Kafka et les sauvegarder
 def consume_kafka_messages():
     session = SessionLocal()
     try:
@@ -73,7 +65,6 @@ def consume_kafka_messages():
             print(f"Message reçu : {message.value.decode('utf-8')}")
             message_decoded = json.loads(message.value.decode("utf-8"))
             
-            # Sauvegarder le message dans la base de données
             gps_message = GPSMessage(
                 daddy_id=message_decoded.get("id"),
                 latitude=message_decoded.get("latitude"),
@@ -83,7 +74,6 @@ def consume_kafka_messages():
             session.add(gps_message)
             session.commit()
 
-            # Diffuser le message via WebSocket
             if manager.active_connections:
                 asyncio.run(manager.broadcast(message.value.decode("utf-8")))
     except Exception as e:
@@ -100,13 +90,12 @@ async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     try:
         while True:
-            await websocket.receive_text()  # Le serveur n'a pas besoin de traiter ces messages
+            await websocket.receive_text()  
     except WebSocketDisconnect:
         print("Client disconnected")
     finally:
         manager.disconnect(websocket)
 
-# Endpoint pour récupérer les messages de la base de données
 @app.get("/messages")
 def get_saved_messages():
     session = SessionLocal()
@@ -125,7 +114,6 @@ def get_saved_messages():
     finally:
         session.close()
 
-# Démarrage de la consommation Kafka dans un thread séparé
 @app.on_event("startup")
 def startup_event():
     threading.Thread(target=consume_kafka_messages, daemon=True).start()

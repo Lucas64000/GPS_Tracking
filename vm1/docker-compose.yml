@@ -80,25 +80,23 @@ services:
       - "8000:8000"  
   
   postgres:
-    image: postgres:13
+    image: postgres:17
     container_name: postgres
     networks:
       - local-kafka
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: mydatabase
+      POSTGRES_DB: daddy_db
     volumes:
-      - ./db/init:/docker-entrypoint-initdb.d
+      - ./db:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d mydatabase"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d daddy_db"]
       interval: 10s
       timeout: 5s
       retries: 5
-
-
 
   vue:
     build:

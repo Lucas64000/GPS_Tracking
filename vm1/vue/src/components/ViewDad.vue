@@ -1,8 +1,7 @@
 <template>
     <div>
-      <!-- Date Range Selectors for Blue and Red Polyline -->
       <div>
-        <!-- Blue Polyline Date Range -->
+        <!-- Daddy 1 -->
         <div class="blue">
           <label for="startDateBlue">Start Date (Blue Polyline):</label>
           <input type="datetime-local" v-model="startDateBlue" @change="filterPoints" />
@@ -14,8 +13,8 @@
           </button>
         </div>
   
+        <!-- Daddy 2 -->
         <div class="red">
-          <!-- Red Polyline Date Range -->
           <label for="startDateRed">Start Date (Red Polyline):</label>
           <input type="datetime-local" v-model="startDateRed" @change="filterPoints" />
   
@@ -27,7 +26,6 @@
         </div>
       </div>
   
-      <!-- Map -->
       <div id="map" style="height: 600px;"></div>
     </div>
   </template>
@@ -54,8 +52,8 @@
         endDateRed: "",
         blueLastPointMarker: null,
         redLastPointMarker: null,
-        blueVisible: true, // Track visibility of blue polyline
-        redVisible: true, // Track visibility of red polyline
+        blueVisible: true, 
+        redVisible: true, 
       };
     },
     mounted() {

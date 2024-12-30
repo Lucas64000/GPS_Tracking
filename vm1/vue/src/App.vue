@@ -17,7 +17,7 @@ export default {
   },
   data() {
     return {
-      showPopup: true, // Show popup initially
+      showPopup: true, 
     };
   },
 };
